@@ -1,0 +1,4 @@
+ws2812b_driver.cpp:16:6:void bitmap2buffer()	24	static
+ws2812b_driver.cpp:33:6:void send_frame()	8	static
+ws2812b_driver.cpp:44:6:void reset_rgb()	16	static
+ws2812b_driver.cpp:52:21:const uint_fast16_t XY(uint_fast16_t, uint_fast16_t)	16	static
