@@ -9,7 +9,7 @@
 #include "defines.h"
 #include "arm_math.h"
 #include "animations.h"
-//#include "assert.h"float ApproxAtan2(float32_t y, float32_t x);
+#include "assert.h"
 
 #define PRODUCTION 0
 //#define DBG 1
@@ -32,7 +32,7 @@ extern uint8_t noise_compensation;
 float ApproxAtan2(float32_t y, float32_t x);
 void HsvToRgb(uint_fast16_t hsv[], uint_fast8_t rgb_space[]);
 void wheel();
-void diffusion();
+void Diffusion();
 void diffusion_1d();
 
 float32_t fft_mag_max = 0;
@@ -42,53 +42,22 @@ void send_frame();
 void bitmap2buffer();
 void log_bin_partition(float u[]);
 
-void HsvToRgb(uint_fast16_t hsv[], uint_fast8_t rgb_space[])
+
+/*
+ * @brief: displays three angular dependent color gradients that can change their
+ * @extended summary:
+ * @effects:
+ * @params:
+ * @returns:
+ */
+void Wheel()
 {
-//	uint_fast8_t rgb_space[3];
-    uint8_t region, remainder, p, q, t;
-
-    if (hsv[S] == 0)
-    {
-    	rgb_space[R] = hsv[V];
-    	rgb_space[G] = hsv[V];
-    	rgb_space[B] = hsv[V];
-        return;
-    }
-
-    region = hsv[H] / 43;
-    remainder = (hsv[H] - (region * 43)) * 6;
-
-    p = (hsv[V] * (255 - hsv[S])) >> 8;
-    q = (hsv[V] * (255 - ((hsv[S] * remainder) >> 8))) >> 8;
-    t = (hsv[V] * (255 - ((hsv[S] * (255 - remainder)) >> 8))) >> 8;
-
-    switch (region)
-    {
-        case 0:
-        	rgb_space[R] = hsv[V]; rgb_space[G] = t; rgb_space[B] = p;
-            break;
-        case 1:
-        	rgb_space[R] = q; rgb_space[G] = hsv[V]; rgb_space[B] = p;
-            break;
-        case 2:
-        	rgb_space[R] = p; rgb_space[G] = hsv[V]; rgb_space[B] = t;
-            break;
-        case 3:
-        	rgb_space[R] = p; rgb_space[G] = q; rgb_space[B] = hsv[V];
-            break;
-        case 4:
-        	rgb_space[R] = t; rgb_space[G] = p; rgb_space[B] = hsv[V];
-            break;
-        default:
-        	rgb_space[R] = hsv[V]; rgb_space[G] = p; rgb_space[B] = q;
-            break;
-    }
-
-    return;
-}
-
-void wheel()
-{
+	/*
+	 * @brief: creates three angularly dependent color gradients that change their angle with time
+	 * @effects: changes the RGB buffer and calls the animation display functions
+	 * @params: none
+	 * @returns: none
+	 */
 	switch_flag = 0;
 
 	while(HAL_DMA_GetState(&hdma_tim16_ch1_up) != HAL_DMA_STATE_READY);
@@ -130,54 +99,53 @@ void wheel()
 	}
 }
 
-bool is_edge(uint_fast16_t x, uint_fast16_t y)
+void Diffusion()
 {
-	if(x != 0 && x != width - 1 && y != 0 && y != height - 1)
-		return false;
-	else
-		return true;
-}
+	/*
+	 * @brief: numerically solves diffusion equations and displays animations
+	 * @extended summary: Solves the two dimensional diffusion/heat equation: d(u(x,y,t))/dt = c * laplacian(u(x,y,t))
+	 * Where u(x,y,t) is the function of concentration/temperature, c is the coefficient of diffusivity
+	 * Numerically solving (under the explicit forward Euler method) yields a solution of the form:
+	 * u(x,y,t+dt) = u(x,y,t) + s( u(x+dx,y,t) + u(x-dx,y,t) + u(x,y+dy,t) + u(x,y-dy,t) - 4 * u(x,y,t))
+	 * Where s = c*dt/dx^2, with dt, dx are discrete constants used under the approximation
+	 * Basically taking some kind of average for each point and its neighbors
+	 * This function solves for the Dirichlete boundary conditions (BC), where the boundaries' value is determined
+	 * (as opposed to Neumann BC, where the spatial derivative is determined)
+	 * This calculation is done for each color of the R, G, and B separately
+	 * Be careful not to make s too large, as it may cause instability in the solution
+	 * @effects: Updates the rgb space buffer to display the diffusion and calls the frame display functions
+	 * @params: none
+	 * @returns: none
+	 */
 
-void diffusion()
-{
-	//Solves the two dimensional diffusion/heat equation: d( u(x,y,t) )/dt = c * laplacian( u(x,y,t) )
-	//Where u(x,y,t) is the function of concentration/temperature, c is the coefficient of diffusivity
-	//Numerically solving (under the explicit forward Euler method) yields a solution of the form:
-	//u(x,y,t+dt) = u(x,y,t) + s( u(x+dx,y,t) + u(x-dx,y,t) + u(x,y+dy,t) + u(x,y-dy,t) - 4 * u(x,y,t) )
-	//Where s = c*dt/dx^2, with dt, dx are discrete constants used under the approximation
-	//Basically taking some kind of average for each point and its neighbors
-	//This function solves for the Dirichlete boundary conditions (BC), where the boundaries' value is determined
-	//(as opposed to Neumann BC, where the spatial derivative is determined)
-	//This calculation is done for each color of the R, G, and B separately
-	//Be careful not to make s too large, as it may cause instability in the solution
 	switch_flag = 0;
 
 	float floatrgb[2][nled][3] = {{{ 0.0f }}};
 
-	uint8_t max_brightness = 50;
-	uint8_t min_brightness = 200;
-	constexpr float s = 0.2f;//diffusion, time and distance constants combination for math
-	float x_max_boundary = .4f;//non-zero boundary conditions to prevent dark frame borders
-	float y_max_boundary = .4f;
-	float x_min_boundary = .4f;
-	float y_min_boundary = .4f;
+	constexpr fmath s = 0.2f;//diffusion, time and distance constants combination for math
+	fmath x_max_boundary = .4f;//non-zero boundary conditions to prevent dark frame borders
+	fmath y_max_boundary = .4f;
+	fmath x_min_boundary = .4f;
+	fmath y_min_boundary = .4f;
 	uint8_t current = 1;
 	uint8_t next = 0;
 
 	uint_fast16_t hsv[3];
-	hsv[S] = 255;
-	hsv[V] = 255;
+	hsv[S] = 255; //max saturation
+	hsv[V] = 255; //max value
 
 	uint_fast8_t temprgb[3];
+
+	constexpr uint_fast8_t reRandom = 4; //chosen to represent number of bits in width parameter
 
 	while(1)
 	{
 		if(switch_flag == 1)
 			return;
 
-		float bass_avg = 0;
-		for(int i = 1; i < ADC_BUF_SIZE / 32+1; i++)
-				bass_avg += fft_mag_dB[i] / (ADC_BUF_SIZE / 32+1);
+		fmath bass_avg = 0;
+		for(int i = 1; i < ADC_BUF_SIZE / 32 + 1; i++)
+				bass_avg += fft_mag_dB[i] / (ADC_BUF_SIZE / 32 + 1);
 
 		if(hysteresis == 1)
 			if(bass_avg > 2500)
@@ -197,7 +165,8 @@ void diffusion()
 
 #ifdef DBG
 		//randomly decide if new point appears
-		if((RNG->DR % 1001) > 950)
+		auto probability =
+		if((RNG->DR % probability) > actual_probability)
 #endif
 #ifdef TESTING
 		//was there a bass threshold crossing
@@ -206,7 +175,7 @@ void diffusion()
 		{
 			volume_event = 0;
 			//if so, get random location
-			uint_fast16_t x = (RNG->DR >> 4) % width; // bit shift to prevent x = y if RNG hasn't updated between lines
+			uint_fast16_t x = (RNG->DR >> reRandom) % width; //bit shift to prevent x = y if RNG hasn't updated between lines
 			uint_fast16_t y = RNG->DR % height;
 			{
 //				uint8_t color = RNG->DR % 3;// random color
@@ -215,22 +184,18 @@ void diffusion()
 
 //				floatrgb[current][XY(x,y)][color] += (RNG->DR % max_brightness)+min_brightness;// random concentration
 				for(int color = 0; color < 3; color++)
-					floatrgb[current][XY(x,y)][color] = (float) temprgb[color];
+					floatrgb[current][XY(x, y)][color] = (float) temprgb[color];
 			}
 		}
 		for (uint_fast16_t x = 0; x < width; x++)
 		{
-			const auto is_x_middle = (1 <= x && x <= width - 1);
-			const auto is_x_min = x == 0;
-			const auto is_x_max = x == (width - 1);
+			const auto is_x_min = (x == 0);
+			const auto is_x_max = (x == (width - 1));
 			for (uint_fast16_t y = 0; y < height; y++)
 			{
 				const int xy = XY(x, y);
-				const auto is_y_middle = (1 <= y && y <= height - 1);
 				const auto is_y_min = (y == 0);
-				const auto is_y_max = (y == height - 1);
-
-
+				const auto is_y_max = (y == (height - 1));
 
 				for (uint8_t color = 0; color < 3; color++)
 				{
@@ -410,7 +375,7 @@ void arctic_monkeys()
 				int xy = XY(x, y);
 				float xy_d;
 //				arm_abs_f32(pSrc, pDst, blockSize)
-				rgb[xy][R] = arm_sin_f32( 3.14 * ((float32_t) x - width/2) / width*2 )*height/counter + y > 0 ? 1 : 0;
+				rgb[xy][R] = arm_sin_f32( 2*PI * ((float32_t) x - width/2) / width*2 )*height/counter + y > 0 ? 1 : 0;
 //				rgb[xy][B] = arm_sin_f32(counter + 3.14 * ((float32_t) x) / width*2)*height + y < 0 ? 1 : 0;
 			}
 		counter += 0.1;
@@ -419,9 +384,17 @@ void arctic_monkeys()
 	}
 }
 
-//fast two arguman arctan approximation
+
+
 float ApproxAtan2(float32_t y, float32_t x)
 {
+	/*
+	 * brief: fast two arguman arctan approximation
+	 * effect: none
+	 * params: y and x coordinates
+	 * returns: floating point approximation of atan2
+	 * source: https://www.dsprelated.com/showarticle/1052.php
+	 */
     const float32_t n1 = 0.97239411f;
     const float32_t n2 = -0.19194795f;
     float32_t result = 0.0f;
@@ -571,31 +544,18 @@ void rainbow_update_HSV(uint_fast16_t *hsv)
 
 }
 
-void waterfall()
+void Waterfall()
 {
+	/*
+	 * @brief: displays a spectrum waterfall animation, with the hue and intensity dependent on the bin magnitude
+	 * @extended summary: this function also implements some consideration to noise, starting at some value,
+	 * and updating the value when the maximal intensity is below a certain threshold
+	 * @effects: updates the RGB space buffer and calls the animation display functions
+	 * @params: none
+	 * @returns: none
+	 */
 	switch_flag = 0;
 
-//lin_step = 2
-//	float bin_avg[width] = {2.7277317, 2.56138897, 2.52718043, 2.47239828,
-//			2.47640753, 2.43758774, 2.37323284, 2.41680765,
-//			2.31911659, 2.28132343, 2.25431919, 2.25722528,
-//			2.26941729, 2.43082142, 2.20516634, 2.29801536,
-//			2.39601254, 2.177598, 2.30320096, 2.25884318,
-//			2.12879729, 2.10871935, 2.08889675, 2.1518724,
-//			2.4533484, 2.19418073, 2.20496607, 2.42618227,
-//			2.14230657, 2.23000765, 2.30119109, 2.09324288};
-
-	//lin_step = 1
-//	float bin_avg[width] = {2.8290801, 2.7630868, 2.57888055, 2.60410976,
-//				2.49171829, 2.49774027, 2.50008392, 2.46965885,
-//				2.46984839, 2.48907685, 2.42154837, 2.45479155,
-//				2.44669294, 2.43645382, 2.45146346, 2.50794673,
-//				2.47349477, 2.40368104, 2.39772105, 2.31023145,
-//				2.25313926, 2.27098966, 2.26089549, 2.20433521,
-//				2.2053988, 2.21821404, 2.23654032, 2.33504653,
-//				2.21932364, 2.15646839, 2.14748192, 2.16675186};
-
-	//oversampling x32 linstep = 2
 	float bin_avg[width] = {
 			2.75623202, 2.64720774, 2.61132169, 2.59654307, 2.58333349,
 			2.56940031, 2.55367208, 2.56256509, 2.45848536, 2.38271737,
@@ -621,7 +581,7 @@ void waterfall()
 			adc_dma_cmplt = 0;
 
 			arm_max_f32(fft_mag_dB, ADC_BUF_SIZE/2, &fft_mag_max, &no_use);
-				noise_compensation = fft_mag_max > 2000 ? 0 : 1;
+			noise_compensation = fft_mag_max > 2000 ? 0 : 1; //determine if the sound is at noise levels
 
 			float bin_fill[width] = { 0 };
 
@@ -632,39 +592,28 @@ void waterfall()
 				bin_fill[i - 1] /= linstep;
 			}
 
-//			float temp_line[width] = &bin_fill[height-1];
-
 			for(int color = 0; color < 3; color++)
 				for(int x = 0; x < width; x++)
 					for(int y = height - 1; y > 0; y--)
 						rgb[XY(x, y)][color] = rgb[XY(x, y - 1)][color];
 
-//			arm_max_f32(bin_fill, width, pResult, pIndex);
-//			arm_min_f32(bin_fill, blockSize, pResult, pIndex)
 			for(int x = 0; x < width; x++)
 			{
 			  float val = log10(bin_fill[x]);
 			  if(noise_compensation == 1)
-				  bin_avg[x] = 0.95*bin_avg[x]+0.05*val;
+				  bin_avg[x] = 0.95 * bin_avg[x]+0.05 * val; //if the environment is quiet enough, slowly correct current bin value
 			  val -= bin_avg[x] + 0.2;
 			  {
 				  hsv[V] = val > 0 ? (val)*10 : 1;
-				  hsv[H] = val > 0 ?(uint16_t)((val+1)*(val+1)*(val+1)*15) : 0;
+				  hsv[H] = val > 0 ? (uint16_t)((val + 1) * (val + 1) * (val + 1) * 15) : 0;
 				  HsvToRgb(hsv, temprgb);//&rgb[XY(x,0)]);
-				  rgb[XY(x,0)][R] = temprgb[R];
-				  rgb[XY(x,0)][G] = temprgb[G];
-				  rgb[XY(x,0)][B] = temprgb[B];
+				  rgb[XY(x, 0)][R] = temprgb[R];
+				  rgb[XY(x, 0)][G] = temprgb[G];
+				  rgb[XY(x, 0)][B] = temprgb[B];
 			  }
 			}
-//			printf(" %f \n\r",log10(bin_fill[1]));
-//			printf("aa \n\r");
-
 		}
 
-//	for(int i = 0; i < width; i++)
-//		  bin_fill[i] = 0;
-
-	bitmap2buffer();
 	send_frame();
 	}
 }

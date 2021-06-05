@@ -11,7 +11,6 @@
 #include "arm_math.h"
 #include <stdio.h>
 #include "animations.h"
-//#include "animations.cpp"
 
 extern ADC_HandleTypeDef hadc1;
 extern DMA_HandleTypeDef hdma_adc1;
@@ -26,7 +25,6 @@ extern DMA_HandleTypeDef hdma_tim16_ch1_up;
 
 extern UART_HandleTypeDef huart2;
 
-/* USER CODE BEGIN PV */
 extern UART_HandleTypeDef *gHuart;
 
 
@@ -36,7 +34,6 @@ extern int16_t mic_buffer[ADC_BUF_SIZE];
 extern float f32_blackman_harris_window_512[512];
 extern float f32_blackman_window_512[512];
 extern float f32_hann_window_512[512];
-//arm_rfft_fast_instance_f32
 extern arm_rfft_fast_instance_f32 fft_handler;
 
 
@@ -62,7 +59,6 @@ void cpp_app()
 	  printf("Hello and welcome to my LED matrix hat FW\n\r");
 	  printf("We will see the FFT bins now\n\r");
 
-	//  arm_rfft_256_fast_init_f32(&fft_handler);//(&fft_handler, ADC_BUF_SIZE, 0, 0);
 	  if(ADC_BUF_SIZE == 512)
 		  arm_rfft_512_fast_init_f32(&fft_handler);
 	  else if(ADC_BUF_SIZE == 1024)
@@ -85,24 +81,12 @@ void cpp_app()
 	  if(HAL_TIM_Base_Start(&htim2) != HAL_OK)
 		  Error_Handler();
 
-	  /* USER CODE END 2 */
-
-	  /* Infinite loop */
-	  /* USER CODE BEGIN WHILE */
-
-	//  if(HAL_TIM_PWM_Start_DMA(&htim16, TIM_CHANNEL_1, frame, nled*8*3+10) != HAL_OK)
-	//	  Error_Handler();
-	//  while(HAL_DMA_GetState(&hdma_tim16_ch1_up) != HAL_DMA_STATE_READY);
-	//
-	//  if(HAL_TIM_PWM_Start_DMA(&htim16, TIM_CHANNEL_1, frame, nled*8*3+10) != HAL_OK)
-	//  	  Error_Handler();
-
 	  reset_rgb();
 	  send_frame();
 
+	  Waterfall();
 
-
-	  diffusion();
+	  Diffusion();
 
 	  diffusion_1d();
 
@@ -110,7 +94,7 @@ void cpp_app()
 
 	  rainbow_HSV();
 
-		waterfall();
+
 
 		while(1);
 }
@@ -140,6 +124,57 @@ int _write(int fd , char *ptr, int len)
 	return -1;
 }
 
+void HsvToRgb(uint_fast16_t hsv[], uint_fast8_t rgb_space[])
+{
+
+/*
+ * @brief: This function converts a single pixel in the HSV color space to the RGB color space
+ * @params: RGB space pointer and HSV space pointer
+ * @returns: changes the values of the rgb_space according to the input hsv
+ * @comments: doesn't check inputs, may not be safe
+ * @source: modified from https://stackoverflow.com/questions/3018313/algorithm-to-convert-rgb-to-hsv-and-hsv-to-rgb-in-range-0-255-for-both
+ */
+    uint8_t region, remainder, p, q, t;
+
+    if (hsv[S] == 0)
+    {
+    	rgb_space[R] = hsv[V];
+    	rgb_space[G] = hsv[V];
+    	rgb_space[B] = hsv[V];
+        return;
+    }
+
+    region = hsv[H] / 43;
+    remainder = (hsv[H] - (region * 43)) * 6;
+
+    p = (hsv[V] * (255 - hsv[S])) >> 8;
+    q = (hsv[V] * (255 - ((hsv[S] * remainder) >> 8))) >> 8;
+    t = (hsv[V] * (255 - ((hsv[S] * (255 - remainder)) >> 8))) >> 8;
+
+    switch (region)
+    {
+        case 0:
+        	rgb_space[R] = hsv[V]; rgb_space[G] = t; rgb_space[B] = p;
+            break;
+        case 1:
+        	rgb_space[R] = q; rgb_space[G] = hsv[V]; rgb_space[B] = p;
+            break;
+        case 2:
+        	rgb_space[R] = p; rgb_space[G] = hsv[V]; rgb_space[B] = t;
+            break;
+        case 3:
+        	rgb_space[R] = p; rgb_space[G] = q; rgb_space[B] = hsv[V];
+            break;
+        case 4:
+        	rgb_space[R] = t; rgb_space[G] = p; rgb_space[B] = hsv[V];
+            break;
+        default:
+        	rgb_space[R] = hsv[V]; rgb_space[G] = p; rgb_space[B] = q;
+            break;
+    }
+
+    return;
+}
 
 #ifdef __cplusplus
 extern "C" {

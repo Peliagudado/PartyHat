@@ -13,10 +13,15 @@ extern TIM_HandleTypeDef htim16;
 uint8_t frame[8 * 3 * nled + extra_buffer] = { 0 }; //PWM DMA buffer, in CCR values
 extern uint_fast8_t rgb[nled][3]; //RGB frame buffer
 
+/*
+ * @brief: converts an 24 bit RGB array into a timer buffer
+ * @extended summary:The timer needs to receive a buffer with the data that will yield the correct OCC
+ * periods according to the WS2812B LEDs data sheet
+ * @
+ */
 void bitmap2buffer()
 {
-	//This function converts an 24 bit RGB array into a timer buffer
-	//The timer needs to receive a buffer with the data that will yield the correct OCC periods according to the WS2812B LEDs data sheet
+
 
 	for (int led_adress = 0; led_adress < nled; led_adress++)
 		for (int color = 0; color < 3; color++)

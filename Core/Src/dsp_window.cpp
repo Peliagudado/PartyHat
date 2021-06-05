@@ -8,6 +8,7 @@
 
 #include "main.h"
 #include "defines.h"
+#include "arm_math.h"
 #include <stdio.h>
 #include <math.h>
 
@@ -15,7 +16,12 @@
 extern int16_t mic_buffer[ADC_BUF_SIZE];
 
 
-
+/*
+ * @brief:
+ * @effects:
+ * @params:
+ * @returns:
+ */
 void blackman_harris_init_f32()
 {
 	//achieves very small side bands, however main lobe is wide
@@ -24,11 +30,10 @@ void blackman_harris_init_f32()
 	float C = 0.14128;
 	float D = 0.01168;
 
-	float pi = 3.14159265;
 
 	for(int i = 0; i < ADC_BUF_SIZE; i++)
 	{
-		float idx = (float) pi*i/ADC_BUF_SIZE;
+		float idx = (float) PI*i/ADC_BUF_SIZE;
 		printf("%f, ", A - B*cos(2*idx) + C*cos(4*idx) - D*cos(6*idx));
 		if((i + 1) % 10 == 0)
 			printf("\n\r");
@@ -44,11 +49,11 @@ void blackman_init_f32()
 	float C = 0.076849;
 	float D = 0.0;
 
-	float pi = 3.14159265;
+
 
 	for(int i = 0; i < ADC_BUF_SIZE; i++)
 	{
-		float idx = (float) pi*i/ADC_BUF_SIZE;
+		float idx = (float) PI*i/ADC_BUF_SIZE;
 		printf("%f, ", A - B*cos(2*idx) + C*cos(4*idx) - D*cos(6*idx));
 		if((i + 1) % 10 == 0)
 			printf("\n\r");
@@ -60,11 +65,9 @@ void hann_init_f32()
 	//very small main lobe, ~-50dB side lobe attenuation
 	float A = 0.5;
 
-	float pi = 3.14159265;
-
 	for(int i = 0; i < ADC_BUF_SIZE; i++)
 	{
-		float idx = (float) pi*i/ADC_BUF_SIZE;
+		float idx = (float) PI*i/ADC_BUF_SIZE;
 		printf("%f, ", sin(idx)*sin(idx));
 		if((i + 1) % 10 == 0)
 			printf("\n\r");
