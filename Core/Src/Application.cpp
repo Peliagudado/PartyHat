@@ -27,7 +27,6 @@ extern UART_HandleTypeDef huart2;
 
 extern UART_HandleTypeDef *gHuart;
 
-
 uint_fast8_t rgb[nled][3] = { 0 }; //RGB frame buffer
 extern int16_t mic_buffer[ADC_BUF_SIZE];
 
@@ -35,9 +34,6 @@ extern float f32_blackman_harris_window_512[512];
 extern float f32_blackman_window_512[512];
 extern float f32_hann_window_512[512];
 extern arm_rfft_fast_instance_f32 fft_handler;
-
-
-
 
 void RetargetInit(UART_HandleTypeDef *huart);
 void send_frame();
@@ -90,7 +86,7 @@ void cpp_app()
 
 	  diffusion_1d();
 
-	  arctic_monkeys();
+	  ArcticMonkeys();
 
 	  rainbow_HSV();
 
@@ -99,14 +95,16 @@ void cpp_app()
 		while(1);
 }
 
-
-
-
 void RetargetInit(UART_HandleTypeDef *huart)
 {
+	/*
+	 * @brief: retarget printf output from <stdio.h> to the UART virtual comm port
+	 * @params: uart handler
+	 * @returns: none
+	 */
 	gHuart=huart;
 	/* Disable I/O buffering for STDOUT stream, so that *chars are sent out as soon as they are printed. */
-	setvbuf(stdout,NULL, _IONBF,0);
+	setvbuf(stdout, NULL, _IONBF,0);
 }
 
 int _write(int fd , char *ptr, int len)
@@ -117,80 +115,16 @@ int _write(int fd , char *ptr, int len)
 		hstatus = HAL_UART_Transmit(gHuart, (uint8_t*) ptr, len, HAL_MAX_DELAY);
 		if(hstatus == HAL_OK)
 			return len;
-//		else
-//			return EIO;
 	}
-//	errno = EBADF;
 	return -1;
 }
-
-void HsvToRgb(uint_fast16_t hsv[], uint_fast8_t rgb_space[])
-{
-
-/*
- * @brief: This function converts a single pixel in the HSV color space to the RGB color space
- * @params: RGB space pointer and HSV space pointer
- * @returns: changes the values of the rgb_space according to the input hsv
- * @comments: doesn't check inputs, may not be safe
- * @source: modified from https://stackoverflow.com/questions/3018313/algorithm-to-convert-rgb-to-hsv-and-hsv-to-rgb-in-range-0-255-for-both
- */
-    uint8_t region, remainder, p, q, t;
-
-    if (hsv[S] == 0)
-    {
-    	rgb_space[R] = hsv[V];
-    	rgb_space[G] = hsv[V];
-    	rgb_space[B] = hsv[V];
-        return;
-    }
-
-    region = hsv[H] / 43;
-    remainder = (hsv[H] - (region * 43)) * 6;
-
-    p = (hsv[V] * (255 - hsv[S])) >> 8;
-    q = (hsv[V] * (255 - ((hsv[S] * remainder) >> 8))) >> 8;
-    t = (hsv[V] * (255 - ((hsv[S] * (255 - remainder)) >> 8))) >> 8;
-
-    switch (region)
-    {
-        case 0:
-        	rgb_space[R] = hsv[V]; rgb_space[G] = t; rgb_space[B] = p;
-            break;
-        case 1:
-        	rgb_space[R] = q; rgb_space[G] = hsv[V]; rgb_space[B] = p;
-            break;
-        case 2:
-        	rgb_space[R] = p; rgb_space[G] = hsv[V]; rgb_space[B] = t;
-            break;
-        case 3:
-        	rgb_space[R] = p; rgb_space[G] = q; rgb_space[B] = hsv[V];
-            break;
-        case 4:
-        	rgb_space[R] = t; rgb_space[G] = p; rgb_space[B] = hsv[V];
-            break;
-        default:
-        	rgb_space[R] = hsv[V]; rgb_space[G] = p; rgb_space[B] = q;
-            break;
-    }
-
-    return;
-}
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-
-
-#ifdef __cplusplus
-}
-#endif
 
 
 extern "C"
 {
 	void App()
 	{
+		//escape the C environment
 		cpp_app();
 	}
 }

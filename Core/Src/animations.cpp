@@ -15,7 +15,6 @@
 //#define DBG 1
 #define TESTING 0
 
-extern uint16_t volume;
 extern uint_fast8_t rgb[nled][3];
 extern DMA_HandleTypeDef hdma_tim16_ch1_up;
 extern uint8_t switch_flag;
@@ -42,14 +41,6 @@ void send_frame();
 void bitmap2buffer();
 void log_bin_partition(float u[]);
 
-
-/*
- * @brief: displays three angular dependent color gradients that can change their
- * @extended summary:
- * @effects:
- * @params:
- * @returns:
- */
 void Wheel()
 {
 	/*
@@ -67,18 +58,11 @@ void Wheel()
 	uint_fast8_t max_brightness = 10;
 	uint_fast16_t counter = 0;
 
-//	const int vol_samples = 100;
-//	uint8_t volume_array [vol_samples];
-//	int index = 0;
-//	float volume_avg = 0;
-
 	while (1)
 	{
 		if(switch_flag == 1)
 			return;
 
-//		volume_avg
-//		HAL_Delay(10);
 		counter+=500/50;
 		R_angle = (float32_t) (counter) / (541);
 		G_angle = -(float32_t) (counter) / (534);
@@ -149,7 +133,9 @@ void Diffusion()
 
 		if(hysteresis == 1)
 			if(bass_avg > 2500)
+			{
 				bass_detection = 0;
+			}
 			else
 			{
 				bass_detection = 0;
@@ -361,8 +347,8 @@ void log_bin_partition(float u[])
         *u++ = pow(base, a + i*c);
     }
 }
-
-void arctic_monkeys()
+//TODO: arctic_monkeys
+void ArcticMonkeys()
 {
 	float32_t floatrgb[nled][3] = {{ 0.0f }};
 	float32_t amplitude = height;
@@ -443,8 +429,6 @@ void spectrogram()
 
 	switch_flag = 0;
 
-//	float Fs = 80000000 / ( (TIM2->PSC+1) * (TIM2->ARR+1) );
-
 	uint_fast8_t temprgb[3];
 
 	int linstep = (ADC_BUF_SIZE / 2) / width;
@@ -458,24 +442,18 @@ void spectrogram()
 		for(int i = 1; i < width+1; i++)
 		  for(int j = i*linstep; j < (i+1)*linstep; j++)
 			  bin_fill[i-1] +=  fft_mag_dB[j];
-//		  bin_fill[width-1] = fft_mag_dB[width - 1];
 
 		for(int x = 0; x < width; x++)
 		  for(int y = 0; y < height; y++)
 		  {
 			  float val = log10(bin_fill[x]);
-//				  float eq;
-//				  arm_sqrt_f32(x+1, &eq);
 			  uint_fast16_t hsv[3];
 			  hsv[S] = 255;
 			  hsv[V] = 15;
 			  if((uint16_t) (19*(val-2.5)) > y)
 			  {
-//					  rgb[XY(x,y)][R] = 3;
-//					  rgb[XY(x,y)][G] = (y/2 > 6 ? 0 : y/2);
-//					  rgb[XY(x,y)][B] = (5-y >= 0 ? 5-y : 0);
-				  hsv[H] = (y*(x+1)+x-y)%256;
-				  HsvToRgb(hsv, temprgb);//&rgb[XY(x,y)]);
+				  hsv[H] = (y * (x + 1) + x - y) % 256;
+				  HsvToRgb(hsv, temprgb);
 				  rgb[XY(x,y)][R] = temprgb[R];
 				  rgb[XY(x,y)][G] = temprgb[G];
 				  rgb[XY(x,y)][B] = temprgb[B];
@@ -510,9 +488,6 @@ void rainbow_update(int_fast8_t cDir[3], uint_fast8_t cCounter[3], const uint_fa
 		cCounter[color] += cDir[color];
 	}
 }
-
-
-
 
 void rainbow()
 {

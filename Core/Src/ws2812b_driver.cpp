@@ -17,7 +17,8 @@ extern uint_fast8_t rgb[nled][3]; //RGB frame buffer
  * @brief: converts an 24 bit RGB array into a timer buffer
  * @extended summary:The timer needs to receive a buffer with the data that will yield the correct OCC
  * periods according to the WS2812B LEDs data sheet
- * @
+ * @effects: changes the frame buffer, which is later sent to the timer in DMA mode
+ * @return: none
  */
 void bitmap2buffer()
 {
@@ -53,11 +54,3 @@ void reset_rgb()
 		for (int color = 0; color < 3; color++)
 			rgb[led_adress][color] = 0;
 }
-
-const uint_fast16_t XY(const uint_fast16_t x, const uint_fast16_t y)
-{
-	(x >= 0 && x < width);
-	(y >= 0 && y < height);
-	return x * height + ((x & 1) ? y : (height - 1 - y));
-}
-

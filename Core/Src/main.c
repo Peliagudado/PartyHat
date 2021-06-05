@@ -23,7 +23,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-//#include <stdbool.h>
 #include <math.h>
 #include "arm_math.h"
 #include <stdio.h>
@@ -102,46 +101,6 @@ uint8_t hysteresis = 0;
 
 long timer = 0;
 
-//uint_fast8_t heart[16][16] ={
-//					{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-//					{ 0, 0, 10, 24, 26, 24, 10, 0, 0, 10, 24, 26, 24, 10, 0, 0 },
-//					{ 0, 15, 37, 40, 40, 40, 38, 16, 16, 38, 40, 40, 40, 37, 15, 0 },
-//					{ 3, 34, 40, 40, 40, 40, 40, 38, 38, 40, 40, 40, 40, 40, 34, 3 },
-//					{ 9, 39, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 39, 9 },
-//					{ 14, 39, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 39, 14 },
-//					{ 6, 38, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 38, 6 },
-//					{ 3, 35, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 35, 3 },
-//					{ 0, 20, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 20, 0 },
-//					{ 0, 0, 28, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 28, 0, 0 },
-//					{ 0, 0, 4, 28, 40, 40, 40, 40, 40, 40, 40, 40, 28, 4, 0, 0 },
-//					{ 0, 0, 0, 2, 25, 40, 40, 40, 40, 40, 40, 25, 2, 0, 0, 0 },
-//					{ 0, 0, 0, 0, 0, 20, 39, 40, 40, 39, 20, 0, 0, 0, 0, 0 },
-//					{ 0, 0, 0, 0, 0, 0, 17, 38, 38, 17, 0, 0, 0, 0, 0, 0 },
-//					{ 0, 0, 0, 0, 0, 0, 0, 16, 16, 0, 0, 0, 0, 0, 0, 0 },
-//					{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
-//};
-//
-//uint_fast8_t star[16][16] = {
-//					{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-//					{ 0, 0, 0, 0, 0, 0, 0, 51, 0, 0, 0, 0, 0, 0, 0, 0 },
-//					{ 0, 0, 0, 0, 0, 0, 0, 51, 51, 0, 0, 0, 0, 0, 0, 0 },
-//					{ 0, 0, 0, 0, 0, 0, 51, 51, 51, 0, 0, 0, 0, 0, 0, 0 },
-//					{ 0, 0, 0, 0, 0, 0, 51, 51, 51, 15, 0, 0, 0, 0, 0, 0 },
-//					{ 0, 0, 0, 0, 0, 51, 51, 51, 51, 51, 15, 0, 0, 0, 0, 0 },
-//					{ 0, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 0 },
-//					{ 0, 0, 51,	51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 51, 0, 0 },
-//					{ 0, 0, 0, 41, 51, 51, 51, 51, 51, 51, 51, 51, 51, 0, 0, 0 },
-//					{ 0, 0, 0, 0, 6, 51, 51, 51, 51, 51, 51, 7, 0, 0, 0, 0 },
-//					{ 0, 0, 0, 0, 0, 51, 51, 51, 51, 51, 51, 0, 0, 0, 0, 0 },
-//					{ 0, 0, 0, 0, 10, 51, 51, 51, 51, 51, 51, 10, 0, 0, 0, 0 },
-//					{ 0, 0, 0, 0, 51, 51, 51, 7, 20, 51, 51, 43, 0, 0, 0, 0 },
-//					{ 0, 0, 0, 0, 51, 51, 11, 0, 0,	10, 51, 51, 0, 0, 0, 0 },
-//					{ 0, 0, 0, 51, 51, 0, 0, 0, 0, 0, 9, 51, 51, 0, 0, 0 },
-//					{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	0, 0 }
-//};
-
-
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -157,30 +116,7 @@ static void MX_TIM2_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
-//void gamma_correction(float gamma);
-//void bitmap2buffer();
-//void reset_rgb();
 void App();
-//void HsvToRgb(uint_fast8_t *hsv, uint_fast8_t *rgb_space);
-//void rainbow_update(int_fast8_t cDir[3], uint_fast8_t cCounter[3], const uint_fast8_t max_brightness);
-//void rainbow();
-//void HsvToRgb(uint_fast16_t *hsv, uint_fast8_t *rgb_space);
-//uint_fast16_t XY(uint_fast16_t x, uint_fast16_t y);
-//void set_heart();
-//void set_star();
-//void wheel();
-//float ApproxAtan2(float32_t y, float32_t x);
-
-//void gamma_correction(float gamma)
-//{
-//	for (int color = 0; color < 3; color++)
-//	{
-//		for (int led_adress = 0; led_adress < nled; led_adress++)
-//		{
-//			rgb[led_adress][color] = (uint_fast8_t) pow(rgb[led_adress][color], 1 / gamma);
-//		}
-//	}
-//}
 
 /* USER CODE END PFP */
 
@@ -592,7 +528,6 @@ static void MX_TIM16_Init(void)
 
   /* USER CODE END TIM16_Init 2 */
   HAL_TIM_MspPostInit(&htim16);
-
 }
 
 /**
@@ -627,7 +562,6 @@ static void MX_USART2_UART_Init(void)
   /* USER CODE BEGIN USART2_Init 2 */
 
   /* USER CODE END USART2_Init 2 */
-
 }
 
 /**
@@ -638,7 +572,6 @@ static void MX_DMA_Init(void)
 
   /* DMA controller clock enable */
   __HAL_RCC_DMA1_CLK_ENABLE();
-
 }
 
 /**
@@ -664,15 +597,9 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD3_GPIO_Port, &GPIO_InitStruct);
-
 }
 
 /* USER CODE BEGIN 4 */
-
-void HAL_SYSTICK_Callback(void)
-{
-	printf("%lu ",uwTick);
-}
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
@@ -685,56 +612,21 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 	GPIOB->ODR ^= 0b1000;
 	volume = 0;
 	uint32_t adc_avg = 0;
-//	uint16_t tmax = 0;
 
 	arm_mean_q15((uint32_t*)mic_buffer, ADC_BUF_SIZE, &adc_avg);
 
 	for(int i = 0; i < ADC_BUF_SIZE; i++)
-	{
 		f32_mic_buffer[i] = (float32_t) mic_buffer[i] - adc_avg;
-	}
 
-
-
-
-//	if(ADC_BUF_SIZE == 512)
-//		arm_mult_f32(f32_mic_buffer, f32_blackman_harris_window_512, fft_in_buf, ADC_BUF_SIZE);
 	if(window == 1)
 		arm_mult_f32(f32_mic_buffer, f32_hann_window_512, fft_in_buf, ADC_BUF_SIZE);
 	else
 		for(int i = 0; i < ADC_BUF_SIZE; i++)
 			fft_in_buf[i] = f32_mic_buffer[i];
 	arm_rfft_fast_f32(&fft_handler, fft_in_buf, fft_out_buf, 0);
-//	for(int i = 0; i < ADC_BUF_SIZE/2; i++)
-//		fft_mag_dB[i] = (complexABS(fft_out_buf[2*i], fft_out_buf[2*i+1]));
 	arm_cmplx_mag_f32(fft_out_buf, fft_mag_dB, ADC_BUF_SIZE/2);
 
-
-
-
-
-
-
-
-//	for(int i = 0; i < ADC_BUF_SIZE/2; i++)
-//	{
-////			if( (mic_buffer[i] - adc_avg > tmax) || (mic_buffer[i] - adc_avg < -tmax ) )
-////				tmax = abs(mic_buffer[i] - adc_avg);
-//		volume += fft_mag_dB[i];
-//	}
-
-
-//		for(int i = 0; i<20; i++)
-//		{
-//			for(int j = 0; j < (int) fft_mag_dB[i]; j++)
-//				printf("%f \n\r",fft_mag_max);
-//			printf("\n\r");
-//		}
-//		printf("\n");
-
-//	volume = tmax;
-
-	if( volume > 1900)
+	if(volume > 1900)
 		volume_event = 1;
 	TIM2->CNT = 0;
 
@@ -745,12 +637,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 		Error_Handler();
 }
 
-
-
-
-
-
-
 /* USER CODE END 4 */
 
 /**
@@ -760,8 +646,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-	GPIOB->ODR |= 0b1000;
 	/* User can add his own implementation to report the HAL error return state */
+	GPIOB->ODR |= 0b1000;
 	__disable_irq();
 	while (1)
 	{
