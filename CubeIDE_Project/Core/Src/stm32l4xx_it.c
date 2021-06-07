@@ -262,13 +262,13 @@ void TIM7_IRQHandler(void)
 //	state %= 8;
 //	HAL_TIM_PWM_Stop_DMA(&htim16, TIM_CHANNEL_1);
 //	while (HAL_DMA_GetState(&hdma_tim16_ch1_up) != HAL_DMA_STATE_READY);
-//	if(state == 4)
+//	if (state == 4)
 //	{
 //		reset_rgb();
 ////		HAL_TIM_PWM_Stop_DMA(&htim16, TIM_CHANNEL_1);
 //		wheel();
 //	}
-//	if(state == 3)
+//	if (state == 3)
 //	{
 //		reset_rgb();
 ////		HAL_TIM_PWM_Stop_DMA(&htim16, TIM_CHANNEL_1);

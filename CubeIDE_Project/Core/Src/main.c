@@ -46,7 +46,6 @@ struct gaussian
 	float sigma;
 };
 
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -604,7 +603,7 @@ static void MX_GPIO_Init(void)
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
 //	printf("%u \r\n",DWT->CYCCNT);
-	if(HAL_TIM_Base_Stop(&htim2) != HAL_OK)
+	if (HAL_TIM_Base_Stop(&htim2) != HAL_OK)
 		Error_Handler();
 
 	float32_t f32_mic_buffer[ADC_BUF_SIZE];
@@ -618,7 +617,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 	for(int i = 0; i < ADC_BUF_SIZE; i++)
 		f32_mic_buffer[i] = (float32_t) mic_buffer[i] - adc_avg;
 
-	if(window == 1)
+	if (__builtin_expect(window, 1))
 		arm_mult_f32(f32_mic_buffer, f32_hann_window_512, fft_in_buf, ADC_BUF_SIZE);
 	else
 		for(int i = 0; i < ADC_BUF_SIZE; i++)
@@ -626,14 +625,14 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 	arm_rfft_fast_f32(&fft_handler, fft_in_buf, fft_out_buf, 0);
 	arm_cmplx_mag_f32(fft_out_buf, fft_mag_dB, ADC_BUF_SIZE/2);
 
-	if(volume > 1900)
+	if (volume > 1900)
 		volume_event = 1;
 	TIM2->CNT = 0;
 
 	adc_dma_cmplt = 1;
 
 //	printf("%u \r\n",DWT->CYCCNT);
-	if(HAL_TIM_Base_Start(&htim2) != HAL_OK)
+	if (HAL_TIM_Base_Start(&htim2) != HAL_OK)
 		Error_Handler();
 }
 

@@ -9,7 +9,5 @@
 #include "arm_math.h"
 #include <stdio.h>
 
-extern __IO uint32_t uwTick;
-
-
+//extern __IO uint32_t uwTick;
 

@@ -5,23 +5,14 @@
  *      Author: EA
  */
 
-
 #include "main.h"
 #include "defines.h"
 #include "arm_math.h"
 #include <stdio.h>
 #include <math.h>
 
-
 extern int16_t mic_buffer[ADC_BUF_SIZE];
 
-
-/*
- * @brief:
- * @effects:
- * @params:
- * @returns:
- */
 void blackman_harris_init_f32()
 {
 	//achieves very small side bands, however main lobe is wide
@@ -30,16 +21,14 @@ void blackman_harris_init_f32()
 	float C = 0.14128;
 	float D = 0.01168;
 
-
 	for(int i = 0; i < ADC_BUF_SIZE; i++)
 	{
 		float idx = (float) PI*i/ADC_BUF_SIZE;
 		printf("%f, ", A - B*cos(2*idx) + C*cos(4*idx) - D*cos(6*idx));
-		if((i + 1) % 10 == 0)
+		if ((i + 1) % 10 == 0)
 			printf("\n\r");
 	}
 }
-
 
 void blackman_init_f32()
 {
@@ -49,13 +38,11 @@ void blackman_init_f32()
 	float C = 0.076849;
 	float D = 0.0;
 
-
-
 	for(int i = 0; i < ADC_BUF_SIZE; i++)
 	{
 		float idx = (float) PI*i/ADC_BUF_SIZE;
 		printf("%f, ", A - B*cos(2*idx) + C*cos(4*idx) - D*cos(6*idx));
-		if((i + 1) % 10 == 0)
+		if ((i + 1) % 10 == 0)
 			printf("\n\r");
 	}
 }
@@ -69,17 +56,10 @@ void hann_init_f32()
 	{
 		float idx = (float) PI*i/ADC_BUF_SIZE;
 		printf("%f, ", sin(idx)*sin(idx));
-		if((i + 1) % 10 == 0)
+		if ((i + 1) % 10 == 0)
 			printf("\n\r");
 	}
 }
-
-void window_multiply()
-{
-
-}
-
-
 
 float f32_hann_window_512[512] =
 {
@@ -192,7 +172,6 @@ float f32_blackman_window_512[512] =
 		0.008944, 0.008613, 0.008310, 0.008037, 0.007793, 0.007579, 0.007393, 0.007236, 0.007107, 0.007007,
 		0.006936, 0.006893,
 };
-
 
 float f32_blackman_harris_window_512[512] =
 {

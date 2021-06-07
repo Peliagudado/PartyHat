@@ -28,9 +28,6 @@ class ParticleSystem
 public:
 	ParticleSystem();
 
-//	void OnUpdate(GLCore::Timestep ts);
-//	void OnRender(GLCore::Utils::OrthographicCamera &camera);
-//
 //	void Emit(const ParticleProps &particleProps);
 private:
 	struct ParticleProps

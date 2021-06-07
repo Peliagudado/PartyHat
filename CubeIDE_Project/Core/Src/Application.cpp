@@ -47,13 +47,11 @@ void cpp_app()
 {
 	RetargetInit(&huart2);
 
-
 	//  CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
 	//  DWT->CYCCNT = 0;
 	//  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 
-	  printf("Hello and welcome to my LED matrix hat FW\n\r");
-	  printf("We will see the FFT bins now\n\r");
+	  printf("Hello and welcome to my LED matrix PARTY HAT FW\n\r");
 
 	  if(ADC_BUF_SIZE == 512)
 		  arm_rfft_512_fast_init_f32(&fft_handler);
@@ -80,19 +78,17 @@ void cpp_app()
 	  reset_rgb();
 	  send_frame();
 
-	  Waterfall();
-
 	  Diffusion();
 
-	  diffusion_1d();
+	  Waterfall();
+
+	  Diffusion1D();
 
 	  ArcticMonkeys();
 
 	  rainbow_HSV();
 
-
-
-		while(1);
+	  while(1);
 }
 
 void RetargetInit(UART_HandleTypeDef *huart)

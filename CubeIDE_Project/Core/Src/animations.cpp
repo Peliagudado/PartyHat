@@ -30,9 +30,9 @@ extern uint8_t noise_compensation;
 
 float ApproxAtan2(float32_t y, float32_t x);
 void HsvToRgb(uint_fast16_t hsv[], uint_fast8_t rgb_space[]);
-void wheel();
+void Wheel();
 void Diffusion();
-void diffusion_1d();
+void Diffusion1D();
 
 float32_t fft_mag_max = 0;
 
@@ -60,7 +60,7 @@ void Wheel()
 
 	while (1)
 	{
-		if(switch_flag == 1)
+		if (switch_flag == 1)
 			return;
 
 		counter+=500/50;
@@ -93,7 +93,8 @@ void Diffusion()
 	 * u(x,y,t+dt) = u(x,y,t) + s( u(x+dx,y,t) + u(x-dx,y,t) + u(x,y+dy,t) + u(x,y-dy,t) - 4 * u(x,y,t))
 	 * Where s = c*dt/dx^2, with dt, dx are discrete constants used under the approximation
 	 * Basically taking some kind of average for each point and its neighbors
-	 * This function solves for the Dirichlete boundary conditions (BC), where the boundaries' value is determined
+	 * This function solves for a periodic boundary conditions (BC) or the Dirichlete BC,
+	 * where the boundaries' value is determined
 	 * (as opposed to Neumann BC, where the spatial derivative is determined)
 	 * This calculation is done for each color of the R, G, and B separately
 	 * Be careful not to make s too large, as it may cause instability in the solution
@@ -104,13 +105,15 @@ void Diffusion()
 
 	switch_flag = 0;
 
-	float floatrgb[2][nled][3] = {{{ 0.0f }}};
-
-	constexpr fmath s = 0.2f;//diffusion, time and distance constants combination for math
-	fmath x_max_boundary = .4f;//non-zero boundary conditions to prevent dark frame borders
+	constexpr enum {DIRICHLET, PERIODIC} BC = PERIODIC;
+	fmath x_max_boundary = .4f;//Dirichlet BC. Non-zero boundary conditions to prevent dark frame borders
 	fmath y_max_boundary = .4f;
 	fmath x_min_boundary = .4f;
 	fmath y_min_boundary = .4f;
+
+	float floatrgb[2][nled][3] = {{{ 0.0f }}};
+
+	constexpr fmath s = 0.2f;//diffusion, time and distance constants combination for math
 	uint8_t current = 1;
 	uint8_t next = 0;
 
@@ -120,58 +123,30 @@ void Diffusion()
 
 	uint_fast8_t temprgb[3];
 
-	constexpr uint_fast8_t reRandom = 4; //chosen to represent number of bits in width parameter
+	constexpr uint_fast8_t reRandom = 6; //chosen to represent number of bits in width parameter
 
 	while(1)
 	{
-		if(switch_flag == 1)
+		if (switch_flag == 1)
 			return;
-
-		fmath bass_avg = 0;
-		for(int i = 1; i < ADC_BUF_SIZE / 32 + 1; i++)
-				bass_avg += fft_mag_dB[i] / (ADC_BUF_SIZE / 32 + 1);
-
-		if(hysteresis == 1)
-			if(bass_avg > 2500)
-			{
-				bass_detection = 0;
-			}
-			else
-			{
-				bass_detection = 0;
-				hysteresis = 0;
-			}
-
-		if(hysteresis == 0)
-			if(bass_avg > 3000)
-			{
-				bass_detection = 1;
-				hysteresis = 1;
-			}
-
 #ifdef DBG
-		//randomly decide if new point appears
-		auto probability =
-		if((RNG->DR % probability) > actual_probability)
+			//randomly decide if new point appears
+			auto chance = 95;
+			auto raffle  = 100;
+			if ((RNG->DR % chance ) > raffle)
 #endif
-#ifdef TESTING
+#ifndef DBG
 		//was there a bass threshold crossing
-		if(bass_detection == 1)
+		if (Schmitt() == 1)
 #endif
 		{
-			volume_event = 0;
-			//if so, get random location
+			//if event condition satisfied, get random location
 			uint_fast16_t x = (RNG->DR >> reRandom) % width; //bit shift to prevent x = y if RNG hasn't updated between lines
 			uint_fast16_t y = RNG->DR % height;
-			{
-//				uint8_t color = RNG->DR % 3;// random color
-				hsv[H] = RNG->DR % 255;
-				HsvToRgb(hsv, temprgb);
-
-//				floatrgb[current][XY(x,y)][color] += (RNG->DR % max_brightness)+min_brightness;// random concentration
-				for(int color = 0; color < 3; color++)
-					floatrgb[current][XY(x, y)][color] = (float) temprgb[color];
-			}
+			hsv[H] = RNG->DR % 255;
+			HsvToRgb(hsv, temprgb);
+			for(int color = 0; color < 3; color++)
+				floatrgb[current][XY(x, y)][color] = (float) temprgb[color];
 		}
 		for (uint_fast16_t x = 0; x < width; x++)
 		{
@@ -185,6 +160,13 @@ void Diffusion()
 
 				for (uint8_t color = 0; color < 3; color++)
 				{
+					if (BC == PERIODIC)//use these lines for periodic BC
+					{
+						x_max_boundary = floatrgb[current][XY(0, y)][color];
+						x_min_boundary = floatrgb[current][XY(width-1, y)][color];
+						y_max_boundary = floatrgb[current][XY(x, 0)][color];
+						y_min_boundary = floatrgb[current][XY(x, height - 1)][color];
+					}
 					float present = floatrgb[current][xy][color];
 					float& future = floatrgb[next][xy][color];
 
@@ -193,7 +175,7 @@ void Diffusion()
 					const auto t3 = !is_y_min ? floatrgb[current][XY(x, y - 1)][color] : y_min_boundary;
 					const auto t4 = !is_y_max ? floatrgb[current][XY(x, y + 1)][color] : y_max_boundary;
 
-					future = present * (1 - 4 * s) + s * (t1 + t2 + t3 + t4);
+					future = present * (1 - 4 * s) + s * (t1 + t2 + t3 + t4) - (present >= 0.04 ? 0.04 : 0);
 				}
 			}
 		}
@@ -211,13 +193,12 @@ void Diffusion()
 	}
 }
 
-
-void diffusion_1d()
+void Diffusion1D()
 {
 	//Solves the two dimensional diffusion/heat equation: d( u(x,y,t) )/dt = c * laplacian( u(x,y,t) )
 	//Where u(x,y,t) is the function of concentration/temperature, c is the coefficient of diffusivity
 	//Numerically solving (under the explicit forward Euler method) yields a solution of the form:
-	//u(x,y,t+dt) = u(x,y,t) + s( u(x+dx,y,t) + u(x-dx,y,t) + u(x,y+dy,t) + u(x,y-dy,t) - 4 * u(x,y,t) )
+	//u(x,y,t+dt) = u(x,y,t) + s( u(x+dx,y,t) + u(x-dx,y,t) + u(x,y+dy,t) + u(x,y-dy,t) - 2 * u(x,y,t) )
 	//Where s = c*dt/dx^2, with dt, dx are discrete constants used under the approximation
 	//Basically taking some kind of average for each point and its neighbors
 	//This function solves for the Dirichlete boundary conditions (BC), where the boundaries' value is determined
@@ -247,7 +228,7 @@ void diffusion_1d()
 
 	while(1)
 	{
-		if(switch_flag == 1)
+		if (switch_flag == 1)
 			return;
 
 		float bass_avg = 0;
@@ -255,13 +236,13 @@ void diffusion_1d()
 				bass_avg += fft_mag_dB[i] / (ADC_BUF_SIZE/2);
 
 
-			if(bass_avg > threshhold)
+			if (bass_avg > threshhold)
 				bass_detection = 1;
 			else
 				bass_detection = 0;
 		//randomly decide if new point appears
-//		if((RNG->DR % 1001) > 950)
-		if(bass_detection == 1)
+//		if ((RNG->DR % 1001) > 950)
+		if (bass_detection == 1)
 		{
 			volume_event = 0;
 			//if so, get random location
@@ -269,13 +250,11 @@ void diffusion_1d()
 			uint_fast16_t y = RNG->DR % height;
 			{
 //				uint8_t color = RNG->DR % 3;// random color
-				uint8_t tmp[3] = {0};
 				hsv[H] = RNG->DR % 255;
 				HsvToRgb(hsv, temprgb);
 
-//				floatrgb[current][XY(x,y)][color] += (RNG->DR % max_brightness)+min_brightness;// random concentration
 				for(int color = 0; color < 3; color++)
-					floatrgb[current][XY(x,y)][color] = (float) temprgb[color];
+					floatrgb[current][XY(x, y)][color] = (float) temprgb[color];
 			}
 		}
 		for (uint_fast16_t x = 0; x < width; x++)
@@ -330,9 +309,6 @@ void diffusion_1d()
 	}
 }
 
-
-
-
 void log_bin_partition(float u[])
 {
     float base = 10.f;
@@ -369,8 +345,6 @@ void ArcticMonkeys()
 		send_frame();
 	}
 }
-
-
 
 float ApproxAtan2(float32_t y, float32_t x)
 {
@@ -420,10 +394,6 @@ float ApproxAtan2(float32_t y, float32_t x)
     return result;
 }
 
-
-
-
-
 void spectrogram()
 {
 
@@ -436,7 +406,7 @@ void spectrogram()
 	float bin_fill[width] = {0};
 	while(1)
 	{
-		if( __builtin_expect(switch_flag, 0) )
+		if ( __builtin_expect(switch_flag, 0) )
 			return;
 
 		for(int i = 1; i < width+1; i++)
@@ -450,19 +420,19 @@ void spectrogram()
 			  uint_fast16_t hsv[3];
 			  hsv[S] = 255;
 			  hsv[V] = 15;
-			  if((uint16_t) (19*(val-2.5)) > y)
+			  if ((uint16_t) (19*(val-2.5)) > y)
 			  {
 				  hsv[H] = (y * (x + 1) + x - y) % 256;
 				  HsvToRgb(hsv, temprgb);
-				  rgb[XY(x,y)][R] = temprgb[R];
-				  rgb[XY(x,y)][G] = temprgb[G];
-				  rgb[XY(x,y)][B] = temprgb[B];
+				  rgb[XY(x, y)][R] = temprgb[R];
+				  rgb[XY(x, y)][G] = temprgb[G];
+				  rgb[XY(x, y)][B] = temprgb[B];
 			  }
 			  else
 			  {
-				  rgb[XY(x,y)][R] = 0;
-				  rgb[XY(x,y)][G] = 0;
-				  rgb[XY(x,y)][B] = 0;
+				  rgb[XY(x, y)][R] = 0;
+				  rgb[XY(x, y)][G] = 0;
+				  rgb[XY(x, y)][B] = 0;
 			  }
 		  }
 		  for(int i = 0; i < width; i++)
@@ -551,7 +521,7 @@ void Waterfall()
 	uint32_t no_use;
 	while(1)
 	{
-	if(adc_dma_cmplt == 1)
+	if (adc_dma_cmplt == 1)
 		{
 			adc_dma_cmplt = 0;
 
@@ -560,7 +530,7 @@ void Waterfall()
 
 			float bin_fill[width] = { 0 };
 
-			for(int i = 1; i < width+1; i++)//start at i=1 to avoid DC bin
+			for(int i = 1; i < width + 1; i++)//start at i=1 to avoid DC bin
 			{
 				for (int j = i * linstep; j < (i + 1) * linstep; j++)
 					bin_fill[i - 1] += (fft_mag_dB[j]);
@@ -575,8 +545,8 @@ void Waterfall()
 			for(int x = 0; x < width; x++)
 			{
 			  float val = log10(bin_fill[x]);
-			  if(noise_compensation == 1)
-				  bin_avg[x] = 0.95 * bin_avg[x]+0.05 * val; //if the environment is quiet enough, slowly correct current bin value
+			  if (noise_compensation == 1)
+				  bin_avg[x] = 0.95 * bin_avg[x] + 0.05 * val; //if the environment is quiet enough, slowly correct current bin value
 			  val -= bin_avg[x] + 0.2;
 			  {
 				  hsv[V] = val > 0 ? (val)*10 : 1;

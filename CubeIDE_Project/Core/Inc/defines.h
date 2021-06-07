@@ -8,8 +8,6 @@
 #ifndef INC_DEFINES_H_
 #define INC_DEFINES_H_
 
-
-
 #define STDIN_FILENO  0
 #define STDOUT_FILENO 1
 #define STDERR_FILENO 2
@@ -24,8 +22,7 @@
 
 #define filter_length 40
 
-
-
-
+typedef float fmath;
+typedef uint_fast8_t smallint;
 
 #endif /* INC_DEFINES_H_ */
