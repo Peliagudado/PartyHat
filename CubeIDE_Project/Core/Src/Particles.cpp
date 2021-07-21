@@ -8,6 +8,19 @@
 #include "defines.h"
 #include "arm_math.h"
 #include <stdio.h>
+#include "Particles.h"
+
+
+Particle::Particle()
+{
+
+}
+
+Particle::~Particle()
+{
+
+}
+
 
 //extern __IO uint32_t uwTick;
 

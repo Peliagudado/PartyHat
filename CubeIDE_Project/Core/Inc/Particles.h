@@ -8,7 +8,6 @@
 #ifndef INC_PARTICLES_H_
 #define INC_PARTICLES_H_
 
-
 class vec2
 {
 public:
@@ -21,21 +20,20 @@ public:
 
 };
 
-
-
-class ParticleSystem
- {
+class Particle
+{
 public:
-	ParticleSystem();
+	Particle();
+	virtual ~Particle();
+//	Rotate();
+//	Update();
 
-//	void Emit(const ParticleProps &particleProps);
 private:
 	struct ParticleProps
 	{
 		vec2 Position;
 		vec2 Velocity;
 		vec2 Accelartion;
-//	glm::vec4 ColorBegin, ColorEnd;
 		float SizeBegin;
 		float SizeEnd;
 		float SizeVariation;
@@ -43,30 +41,25 @@ private:
 	};
 };
 
-class Appearance
- {
-public:
-	Appearance();
-
-//	void OnUpdate(GLCore::Timestep ts);
-//	void OnRender(GLCore::Utils::OrthographicCamera &camera);
+//class Appearance
+// {
+//public:
+//	Appearance();
 //
-//	void Emit(const ParticleProps &particleProps);
-private:
-	struct ParticleProps
-	{
-		vec2 Position;
-		vec2 Velocity;
-		vec2 VelocityVariation;
-//	glm::vec4 ColorBegin, ColorEnd;
-		float SizeBegin;
-		float SizeEnd;
-		float SizeVariation;
-		float LifeTime = 1.0f;
-	};
-};
+//private:
+//	struct ParticleProps
+//	{
+//		vec2 Position;
+//		vec2 Velocity;
+//		vec2 VelocityVariation;
+////	glm::vec4 ColorBegin, ColorEnd;
+//		float SizeBegin;
+//		float SizeEnd;
+//		float SizeVariation;
+//		float LifeTime = 1.0f;
+//	};
+//};
 
 //particle
-
 
 #endif /* INC_PARTICLES_H_ */

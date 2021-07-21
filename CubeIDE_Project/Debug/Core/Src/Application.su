@@ -1,4 +1,0 @@
-Application.cpp:53:6:void cpp_app()	8	static
-Application.cpp:119:6:void RetargetInit(UART_HandleTypeDef*)	16	static
-Application.cpp:126:5:int _write(int, char*, int)	32	static
-Application.cpp:155:7:void App()	8	static

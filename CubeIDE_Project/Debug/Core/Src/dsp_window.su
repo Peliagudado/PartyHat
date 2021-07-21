@@ -1,6 +1,0 @@
-cmath:184:3:constexpr float std::cos(float)	16	static
-cmath:425:3:constexpr float std::sin(float)	16	static
-dsp_window.cpp:19:6:void blackman_harris_init_f32()	48	static
-dsp_window.cpp:39:6:void blackman_init_f32()	48	static
-dsp_window.cpp:58:6:void hann_init_f32()	32	static
-dsp_window.cpp:74:6:void window_multiply()	4	static

@@ -14,7 +14,7 @@
 
 #define height 16
 
-#define width 32
+#define width 43
 #define nled (width*height)
 #define extra_buffer 10
 

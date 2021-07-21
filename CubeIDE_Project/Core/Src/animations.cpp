@@ -4,7 +4,7 @@
  *  Created on: 24 Apr 2021
  *      Author: EA
  */
-#include <Particles.h>
+#include "Particles.h"
 #include "main.h"
 #include "defines.h"
 #include "arm_math.h"
@@ -90,7 +90,7 @@ void Diffusion()
 	 * @extended summary: Solves the two dimensional diffusion/heat equation: d(u(x,y,t))/dt = c * laplacian(u(x,y,t))
 	 * Where u(x,y,t) is the function of concentration/temperature, c is the coefficient of diffusivity
 	 * Numerically solving (under the explicit forward Euler method) yields a solution of the form:
-	 * u(x,y,t+dt) = u(x,y,t) + s( u(x+dx,y,t) + u(x-dx,y,t) + u(x,y+dy,t) + u(x,y-dy,t) - 4 * u(x,y,t))
+	 * u(x,y,t+dt) = u(x,y,t) + s(u(x+dx,y,t) + u(x-dx,y,t) + u(x,y+dy,t) + u(x,y-dy,t) - 4 * u(x,y,t))
 	 * Where s = c*dt/dx^2, with dt, dx are discrete constants used under the approximation
 	 * Basically taking some kind of average for each point and its neighbors
 	 * This function solves for a periodic boundary conditions (BC) or the Dirichlete BC,
@@ -105,15 +105,16 @@ void Diffusion()
 
 	switch_flag = 0;
 
-	constexpr enum {DIRICHLET, PERIODIC} BC = PERIODIC;
-	fmath x_max_boundary = .4f;//Dirichlet BC. Non-zero boundary conditions to prevent dark frame borders
+constexpr enum
+	{	DIRICHLET = 0, PERIODIC = 1} BC = PERIODIC;
+	fmath x_max_boundary = .4f; //Dirichlet BC. Non-zero boundary conditions to prevent dark frame borders
 	fmath y_max_boundary = .4f;
 	fmath x_min_boundary = .4f;
 	fmath y_min_boundary = .4f;
 
-	float floatrgb[2][nled][3] = {{{ 0.0f }}};
+	float floatrgb[2][nled][3] = { { { 0.0f } } };
 
-	constexpr fmath s = 0.2f;//diffusion, time and distance constants combination for math
+	constexpr fmath s = 0.2f; //diffusion, time and distance constants combination for math
 	uint8_t current = 1;
 	uint8_t next = 0;
 
@@ -125,15 +126,15 @@ void Diffusion()
 
 	constexpr uint_fast8_t reRandom = 6; //chosen to represent number of bits in width parameter
 
-	while(1)
+	while (1)
 	{
 		if (switch_flag == 1)
 			return;
 #ifdef DBG
 			//randomly decide if new point appears
-			auto chance = 95;
-			auto raffle  = 100;
-			if ((RNG->DR % chance ) > raffle)
+			const auto chance = 93;
+			const auto raffle  = 100;
+			if ((RNG->DR % raffle ) > chance)
 #endif
 #ifndef DBG
 		//was there a bass threshold crossing
@@ -145,7 +146,7 @@ void Diffusion()
 			uint_fast16_t y = RNG->DR % height;
 			hsv[H] = RNG->DR % 255;
 			HsvToRgb(hsv, temprgb);
-			for(int color = 0; color < 3; color++)
+			for (int color = 0; color < 3; color++)
 				floatrgb[current][XY(x, y)][color] = (float) temprgb[color];
 		}
 		for (uint_fast16_t x = 0; x < width; x++)
@@ -160,30 +161,31 @@ void Diffusion()
 
 				for (uint8_t color = 0; color < 3; color++)
 				{
-					if (BC == PERIODIC)//use these lines for periodic BC
+					if (BC == PERIODIC) //use these lines for periodic BC
 					{
 						x_max_boundary = floatrgb[current][XY(0, y)][color];
-						x_min_boundary = floatrgb[current][XY(width-1, y)][color];
+						x_min_boundary = floatrgb[current][XY(width - 1, y)][color];
 						y_max_boundary = floatrgb[current][XY(x, 0)][color];
 						y_min_boundary = floatrgb[current][XY(x, height - 1)][color];
 					}
 					float present = floatrgb[current][xy][color];
-					float& future = floatrgb[next][xy][color];
+					float &future = floatrgb[next][xy][color];
 
 					const auto t1 = !is_x_min ? floatrgb[current][XY(x - 1, y)][color] : x_min_boundary;
 					const auto t2 = !is_x_max ? floatrgb[current][XY(x + 1, y)][color] : x_max_boundary;
 					const auto t3 = !is_y_min ? floatrgb[current][XY(x, y - 1)][color] : y_min_boundary;
 					const auto t4 = !is_y_max ? floatrgb[current][XY(x, y + 1)][color] : y_max_boundary;
 
-					future = present * (1 - 4 * s) + s * (t1 + t2 + t3 + t4) - (present >= 0.04 ? 0.04 : 0);
+					future = present * (1 - 4 * s) + s * (t1 + t2 + t3 + t4) -
+							(present >= 0.1f && BC == PERIODIC ? 0.015f : 0); // reduce intensity globally for periodic BC
 				}
 			}
 		}
 
 		//floatrgb to 24bit rgb
-		for(int led_adress = 0; led_adress < nled; led_adress++)
-			for(uint8_t color = 0; color < 3; color ++)
-				rgb[led_adress][color] = (uint_fast8_t) round(floatrgb[next][led_adress][color]);
+		for (int led_adress = 0; led_adress < nled; led_adress++)
+			for (uint8_t color = 0; color < 3; color++)
+				rgb[led_adress][color] = (uint_fast8_t) round(floatrgb[next][led_adress][color] * 3);
 
 		uint8_t temp = current;
 		current = next;
@@ -198,7 +200,7 @@ void Diffusion1D()
 	//Solves the two dimensional diffusion/heat equation: d( u(x,y,t) )/dt = c * laplacian( u(x,y,t) )
 	//Where u(x,y,t) is the function of concentration/temperature, c is the coefficient of diffusivity
 	//Numerically solving (under the explicit forward Euler method) yields a solution of the form:
-	//u(x,y,t+dt) = u(x,y,t) + s( u(x+dx,y,t) + u(x-dx,y,t) + u(x,y+dy,t) + u(x,y-dy,t) - 2 * u(x,y,t) )
+	//u(x,y,t+dt) = u(x,y,t) + s(u(x + dx, t) + u(x - dx, t) + u(x, t)) - 2 * u(x, t))
 	//Where s = c*dt/dx^2, with dt, dx are discrete constants used under the approximation
 	//Basically taking some kind of average for each point and its neighbors
 	//This function solves for the Dirichlete boundary conditions (BC), where the boundaries' value is determined
@@ -326,10 +328,10 @@ void log_bin_partition(float u[])
 //TODO: arctic_monkeys
 void ArcticMonkeys()
 {
-	float32_t floatrgb[nled][3] = {{ 0.0f }};
+	float32_t floatrgb[nled][3] = { { 0.0f } };
 	float32_t amplitude = height;
 	float counter = 0;
-	while(1)
+	while (1)
 	{
 		for (int x = 0; x < width; x++)
 			for (int y = 0; y < height; y++)
@@ -337,61 +339,13 @@ void ArcticMonkeys()
 				int xy = XY(x, y);
 				float xy_d;
 //				arm_abs_f32(pSrc, pDst, blockSize)
-				rgb[xy][R] = arm_sin_f32( 2*PI * ((float32_t) x - width/2) / width*2 )*height/counter + y > 0 ? 1 : 0;
+				rgb[xy][R] = arm_sin_f32(2 * PI * ((float32_t) x - width / 2) / width * 2) * height / counter + y > 0 ? 1 : 0;
 //				rgb[xy][B] = arm_sin_f32(counter + 3.14 * ((float32_t) x) / width*2)*height + y < 0 ? 1 : 0;
 			}
-		counter += 0.1;
+		counter += 0.1f;
 
 		send_frame();
 	}
-}
-
-float ApproxAtan2(float32_t y, float32_t x)
-{
-	/*
-	 * brief: fast two arguman arctan approximation
-	 * effect: none
-	 * params: y and x coordinates
-	 * returns: floating point approximation of atan2
-	 * source: https://www.dsprelated.com/showarticle/1052.php
-	 */
-    const float32_t n1 = 0.97239411f;
-    const float32_t n2 = -0.19194795f;
-    float32_t result = 0.0f;
-    if (x != 0.0f)
-    {
-        const union { float32_t flVal; uint_fast32_t nVal; } tYSign = { y };
-        const union { float32_t flVal; uint_fast32_t nVal; } tXSign = { x };
-        if (fabsf(x) >= fabsf(y))
-        {
-            union { float32_t flVal; uint_fast32_t nVal; } tOffset = { PI };
-            // Add or subtract PI based on y's sign.
-            tOffset.nVal |= tYSign.nVal & 0x80000000u;
-            // No offset if x is positive, so multiply by 0 or based on x's sign.
-            tOffset.nVal *= tXSign.nVal >> 31;
-            result = tOffset.flVal;
-            const float32_t z = y / x;
-            result += (n1 + n2 * z * z) * z;
-        }
-        else // Use atan(y/x) = pi/2 - atan(x/y) if |y/x| > 1.
-        {
-            union { float32_t flVal; uint_fast32_t nVal; } tOffset = { PI/2 };
-            // Add or subtract PI/2 based on y's sign.
-            tOffset.nVal |= tYSign.nVal & 0x80000000u;
-            result = tOffset.flVal;
-            const float32_t z = x / y;
-            result -= (n1 + n2 * z * z) * z;
-        }
-    }
-    else if (y > 0.0f)
-    {
-        result = PI/2;
-    }
-    else if (y < 0.0f)
-    {
-        result = -PI/2;
-    }
-    return result;
 }
 
 void spectrogram()
@@ -403,43 +357,42 @@ void spectrogram()
 
 	int linstep = (ADC_BUF_SIZE / 2) / width;
 	linstep = 2;
-	float bin_fill[width] = {0};
-	while(1)
+	float bin_fill[width] = { 0 };
+	while (1)
 	{
-		if ( __builtin_expect(switch_flag, 0) )
+		if (__builtin_expect(switch_flag, 0))
 			return;
 
-		for(int i = 1; i < width+1; i++)
-		  for(int j = i*linstep; j < (i+1)*linstep; j++)
-			  bin_fill[i-1] +=  fft_mag_dB[j];
+		for (int i = 1; i < width + 1; i++)
+			for (int j = i * linstep; j < (i + 1) * linstep; j++)
+				bin_fill[i - 1] += fft_mag_dB[j];
 
-		for(int x = 0; x < width; x++)
-		  for(int y = 0; y < height; y++)
-		  {
-			  float val = log10(bin_fill[x]);
-			  uint_fast16_t hsv[3];
-			  hsv[S] = 255;
-			  hsv[V] = 15;
-			  if ((uint16_t) (19*(val-2.5)) > y)
-			  {
-				  hsv[H] = (y * (x + 1) + x - y) % 256;
-				  HsvToRgb(hsv, temprgb);
-				  rgb[XY(x, y)][R] = temprgb[R];
-				  rgb[XY(x, y)][G] = temprgb[G];
-				  rgb[XY(x, y)][B] = temprgb[B];
-			  }
-			  else
-			  {
-				  rgb[XY(x, y)][R] = 0;
-				  rgb[XY(x, y)][G] = 0;
-				  rgb[XY(x, y)][B] = 0;
-			  }
-		  }
-		  for(int i = 0; i < width; i++)
-			  bin_fill[i] = 0;
+		for (int x = 0; x < width; x++)
+			for (int y = 0; y < height; y++)
+			{
+				float val = log10(bin_fill[x]);
+				uint_fast16_t hsv[3];
+				hsv[S] = 255;
+				hsv[V] = 15;
+				if ((uint16_t) (19 * (val - 2.5f)) > y)
+				{
+					hsv[H] = (y * (x + 1) + x - y) % 256;
+					HsvToRgb(hsv, temprgb);
+					rgb[XY(x, y)][R] = temprgb[R];
+					rgb[XY(x, y)][G] = temprgb[G];
+					rgb[XY(x, y)][B] = temprgb[B];
+				}
+				else
+				{
+					rgb[XY(x, y)][R] = 0;
+					rgb[XY(x, y)][G] = 0;
+					rgb[XY(x, y)][B] = 0;
+				}
+			}
+		for (int i = 0; i < width; i++)
+			bin_fill[i] = 0;
 
-
-		  send_frame();
+		send_frame();
 	}
 }
 
@@ -467,8 +420,6 @@ void rainbow()
 
 	uint_fast8_t cCounter[3] = { 1, max_brightness * 2 / 3, max_brightness * 2 / 3 };
 	int_fast8_t cDir[3] = { -1, -1, 1 };
-
-
 
 	while (1)
 	{
@@ -501,6 +452,7 @@ void Waterfall()
 	 */
 	switch_flag = 0;
 
+	//initial guess for noise content in each bin
 	float bin_avg[width] = {
 			2.75623202, 2.64720774, 2.61132169, 2.59654307, 2.58333349,
 			2.56940031, 2.55367208, 2.56256509, 2.45848536, 2.38271737,
@@ -519,47 +471,47 @@ void Waterfall()
 	uint_fast8_t temprgb[3];
 
 	uint32_t no_use;
-	while(1)
+	while (1)
 	{
-	if (adc_dma_cmplt == 1)
+		if (adc_dma_cmplt == 1)
 		{
 			adc_dma_cmplt = 0;
 
-			arm_max_f32(fft_mag_dB, ADC_BUF_SIZE/2, &fft_mag_max, &no_use);
+			arm_max_f32(fft_mag_dB, ADC_BUF_SIZE / 2, &fft_mag_max, &no_use);
 			noise_compensation = fft_mag_max > 2000 ? 0 : 1; //determine if the sound is at noise levels
 
-			float bin_fill[width] = { 0 };
+			float bin_fill[width] = { 0.0f };
 
-			for(int i = 1; i < width + 1; i++)//start at i=1 to avoid DC bin
+			for (int i = 1; i < width + 1; i++) //start at i=1 to avoid DC bin
 			{
 				for (int j = i * linstep; j < (i + 1) * linstep; j++)
 					bin_fill[i - 1] += (fft_mag_dB[j]);
 				bin_fill[i - 1] /= linstep;
 			}
 
-			for(int color = 0; color < 3; color++)
-				for(int x = 0; x < width; x++)
-					for(int y = height - 1; y > 0; y--)
+			for (int color = 0; color < 3; color++)
+				for (int x = 0; x < width; x++)
+					for (int y = height - 1; y > 0; y--)
 						rgb[XY(x, y)][color] = rgb[XY(x, y - 1)][color];
 
-			for(int x = 0; x < width; x++)
+			for (int x = 0; x < width; x++)
 			{
-			  float val = log10(bin_fill[x]);
-			  if (noise_compensation == 1)
-				  bin_avg[x] = 0.95 * bin_avg[x] + 0.05 * val; //if the environment is quiet enough, slowly correct current bin value
-			  val -= bin_avg[x] + 0.2;
-			  {
-				  hsv[V] = val > 0 ? (val)*10 : 1;
-				  hsv[H] = val > 0 ? (uint16_t)((val + 1) * (val + 1) * (val + 1) * 15) : 0;
-				  HsvToRgb(hsv, temprgb);//&rgb[XY(x,0)]);
-				  rgb[XY(x, 0)][R] = temprgb[R];
-				  rgb[XY(x, 0)][G] = temprgb[G];
-				  rgb[XY(x, 0)][B] = temprgb[B];
-			  }
+				float val = log10(bin_fill[x]);
+				if (noise_compensation == 1)
+					bin_avg[x] = 0.95f * bin_avg[x] + 0.05f * val; //if the environment is quiet enough, slowly correct current bin value
+				val -= bin_avg[x] + 0.2;
+				{
+					hsv[V] = val > 0 ? (val) * 10 : 1;
+					hsv[H] = val > 0 ? (uint16_t) ((val + 1) * (val + 1) * (val + 1) * 15) : 0;
+					HsvToRgb(hsv, temprgb); //&rgb[XY(x,0)]);
+					rgb[XY(x, 0)][R] = temprgb[R];
+					rgb[XY(x, 0)][G] = temprgb[G];
+					rgb[XY(x, 0)][B] = temprgb[B];
+				}
 			}
 		}
 
-	send_frame();
+		send_frame();
 	}
 }
 
@@ -594,6 +546,7 @@ void rainbow_HSV()
 	}
 }
 
+//@TODO: add Matrix like animation using particles
 void The_Matrix()
 {
 
